@@ -1,0 +1,36 @@
+{
+  "vault_path": "C:\\path\\to\\your\\vault",
+  "qmd_executable": "C:\\Program Files\\nodejs\\node.exe",
+  "qmd_entry": "C:\\Users\\your-name\\AppData\\Roaming\\npm\\node_modules\\@tobilu\\qmd\\dist\\cli\\qmd.js",
+  "qmd_collection": "obsidian",
+  "behavior": {
+    "mode": "auto",
+    "log_retention_days": 30
+  },
+  "graph": {
+    "backend": "auto",
+    "obsidian_cli": "C:\\Program Files\\Obsidian\\Obsidian.com",
+    "obsidian_vault": "your-vault-name",
+    "excluded_folders": [
+      ".obsidian/",
+      ".trash/",
+      ".git/",
+      "attachments/",
+      "templates/"
+    ],
+    "relationship_fields": [
+      "Up",
+      "Source",
+      "References",
+      "来源",
+      "参考",
+      "应用于",
+      "衍生自"
+    ],
+    "frontmatter_mapping": {
+      "domain": "专业",
+      "source": "来源",
+      "noteType": "笔记类型"
+    }
+  }
+}

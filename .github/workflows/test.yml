@@ -1,0 +1,26 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          package-manager-cache: false
+      - name: Run deterministic fixture tests
+        shell: pwsh
+        run: ./tests/run-tests.ps1
+      - name: Verify private files are not tracked
+        shell: pwsh
+        run: |
+          if (Test-Path ./config.json) { throw "config.json must not be tracked" }
+          if (Test-Path ./logs) { throw "logs must not be tracked" }

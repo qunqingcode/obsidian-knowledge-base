@@ -1,0 +1,25 @@
+# Local configuration (may contain private paths or identifiers)
+config.json
+config.local.json
+*.local.json
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+
+# Local indexes and caches
+.qmd/
+node_modules/
+*.log
+logs/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Obsidian-local state if this repository is opened as a Vault
+.obsidian/
+.trash/
