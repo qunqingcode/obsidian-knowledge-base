@@ -197,6 +197,9 @@ Windows 本地运行：
 - [项目定位与安装说明](./docs/obsidian-knowledge-base-项目定位与安装.md)
 - [图查询参考](./docs/graph-queries.md)
 - [检索评估规范](./references/evaluation.md)
+- [贡献指南](./CONTRIBUTING.md)
+- [安全策略](./SECURITY.md)
+- [变更记录](./CHANGELOG.md)
 - [第三方声明](./docs/THIRD_PARTY_NOTICES.md)
 
 ## 平台范围
