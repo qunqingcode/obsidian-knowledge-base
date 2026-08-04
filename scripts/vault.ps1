@@ -370,12 +370,47 @@ $seenPaths = [System.Collections.Generic.HashSet[string]]::new(
     [System.StringComparer]::OrdinalIgnoreCase
 )
 
+function Resolve-QmdResultPath([string]$RawPath) {
+    $value = $RawPath.Trim()
+    if ($value -match '^qmd://[^/]+/(.+)$') {
+        $uriRelative = [Uri]::UnescapeDataString($Matches[1]).Replace('\', '/')
+        $direct = [System.IO.Path]::GetFullPath((Join-Path $vault $uriRelative))
+        if (Test-Path -LiteralPath $direct -PathType Leaf) { return $direct }
+
+        # QMD virtual URIs normalize some folder-name punctuation (notably
+        # underscores to hyphens). Map the URI back to the real vault path.
+        $normalizedUri = $uriRelative.Replace('_', '-').ToLowerInvariant()
+        $normalizedMatches = @(
+            $vaultNotes | Where-Object {
+                (Get-RelativeNotePath $_.FullName).Replace('\', '/').Replace('_', '-').ToLowerInvariant() -eq
+                    $normalizedUri
+            }
+        )
+        if ($normalizedMatches.Count -eq 1) { return $normalizedMatches[0].FullName }
+
+        $leafName = [System.IO.Path]::GetFileName($uriRelative)
+        $leafMatches = @($vaultNotes | Where-Object { $_.Name -eq $leafName })
+        if ($leafMatches.Count -eq 1) { return $leafMatches[0].FullName }
+        throw "Unable to map QMD result URI to a unique Vault note: $RawPath"
+    }
+    if ([System.IO.Path]::IsPathRooted($value)) {
+        return [System.IO.Path]::GetFullPath($value)
+    }
+
+    $relativeValue = $value -replace '^[.][/\\]', ''
+    $vaultCandidate = [System.IO.Path]::GetFullPath((Join-Path $vault $relativeValue))
+    if (Test-Path -LiteralPath $vaultCandidate -PathType Leaf) {
+        return $vaultCandidate
+    }
+    return [System.IO.Path]::GetFullPath($value)
+}
+
 foreach ($result in $qmdResults) {
     if ($results.Count -ge $MaxResults) {
         break
     }
 
-    $fullName = [System.IO.Path]::GetFullPath([string]$result.file)
+    $fullName = Resolve-QmdResultPath ([string]$result.file)
     if (
         -not $fullName.StartsWith($vaultPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
         [System.IO.Path]::GetExtension($fullName) -ne ".md"

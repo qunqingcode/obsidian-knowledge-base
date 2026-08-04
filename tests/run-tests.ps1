@@ -146,6 +146,46 @@ try {
     $upgradedConfig = Get-Content -LiteralPath $installedConfigPath -Raw -Encoding UTF8 |
         ConvertFrom-Json
     Assert-Equal $upgradedConfig.behavior.mode "audit" "Upgrade discarded the user's behavior mode"
+
+    # QMD 2.5.x can return qmd:// URIs whose folder punctuation differs from
+    # the physical Vault path. Verify that the search adapter maps them back.
+    $qmdFixtureVault = Join-Path $tempRoot "qmd-vault"
+    New-Item -ItemType Directory -Path $qmdFixtureVault -Force | Out-Null
+    Copy-Item -Path (Join-Path $fixtureVault "*") -Destination $qmdFixtureVault -Recurse
+    Rename-Item `
+        -LiteralPath (Join-Path $qmdFixtureVault "Folder") `
+        -NewName "Folder_Name"
+    $fakeQmd = Join-Path $tempRoot "fake-qmd.js"
+    @'
+const command = process.argv[2];
+if (command === "update") process.exit(0);
+if (command === "search") {
+  process.stdout.write(JSON.stringify([{
+    file: "qmd://mock/Folder-Name/Gamma.md",
+    title: "Gamma",
+    snippet: "Gamma",
+    score: 1,
+    line: 1
+  }]));
+  process.exit(0);
+}
+process.exit(1);
+'@ | Set-Content -LiteralPath $fakeQmd -Encoding UTF8
+    $upgradedConfig.vault_path = $qmdFixtureVault
+    $upgradedConfig.qmd_executable = $nodePath
+    $upgradedConfig.qmd_entry = $fakeQmd
+    $upgradedConfig.qmd_collection = "mock"
+    $upgradedConfig.search.backend = "qmd"
+    $upgradedConfig | ConvertTo-Json -Depth 8 |
+        Set-Content -LiteralPath $installedConfigPath -Encoding UTF8
+    $qmdUriSearch = @(& $installedVaultScript `
+        -Mode search `
+        -Query "Gamma" `
+        -MaxResults 1 | ConvertFrom-Json)
+    Assert-Equal `
+        $qmdUriSearch[0].path `
+        "Folder_Name\Gamma.md" `
+        "QMD virtual URI was not mapped back to the physical Vault path"
 }
 finally {
     if (Test-Path -LiteralPath $tempRoot) {
