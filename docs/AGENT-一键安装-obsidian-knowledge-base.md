@@ -3,6 +3,17 @@
 > 本文档的阅读对象是 AI Agent，不是最终用户。  
 > Agent 获得本文档后，应自行完成环境检查、依赖安装、Skill 部署、配置生成和功能验收。
 
+## 首选执行方式
+
+源码可用时，优先运行仓库内的一键安装器：
+
+```powershell
+.\install.ps1 -VaultPath "<VAULT_PATH>" -Agent <codex|claude|cursor|agents>
+```
+
+未知 Agent 使用 `-Agent custom -TargetPath "<SKILL_TARGET>"`。安装器会部署文件、
+生成配置并运行 `doctor`。只有安装器不可运行时，才按下文阶段逐项执行。
+
 ## 用户只需这样说
 
 将本文档交给 Agent，然后发送：
@@ -83,6 +94,8 @@ $SKILL_SOURCE = $sourceRoot
 ```text
 SKILL.md
 scripts\vault.ps1
+scripts\install.ps1
+scripts\doctor.ps1
 scripts\graph.ps1
 scripts\graph-engine.js
 scripts\get-behavior.ps1
@@ -98,7 +111,7 @@ docs\THIRD_PARTY_NOTICES.md
 
 - 读取系统版本、PATH 和已安装软件；
 - 安装或升级 QMD；
-- 在缺少 Node.js 时，通过可信官方来源安装 Node.js 22 LTS 或更高版本；
+- 在缺少 Node.js 时，通过可信官方来源安装 Node.js 18 或更高版本；
 - 创建或更新 QMD Collection；
 - 将 Skill 文件复制到当前用户的 Codex Skills 目录；
 - 创建或更新该 Skill 的 `config.json`；
@@ -157,7 +170,7 @@ node --version
 npm --version
 ```
 
-要求 Node.js `>=22.0.0`。
+要求 Node.js `>=18.0.0`，推荐当前 LTS。
 
 若未安装或版本过低：
 
@@ -285,10 +298,14 @@ obsidian vaults verbose format=json
 
 ```json
 {
+  "config_version": 2,
   "vault_path": "<VAULT_PATH>",
   "qmd_executable": "<NODE_ABSOLUTE_PATH>",
   "qmd_entry": "<QMD_ENTRY_ABSOLUTE_PATH>",
   "qmd_collection": "<QMD_COLLECTION>",
+  "search": {
+    "backend": "auto"
+  },
   "behavior": {
     "mode": "auto",
     "log_retention_days": 30
@@ -397,7 +414,7 @@ Get-Content -LiteralPath ".\config.json" -Raw -Encoding UTF8 | ConvertFrom-Json
 
 同时满足以下条件才可报告安装成功：
 
-- Node.js 版本不低于 22；
+- Node.js 版本不低于 18；
 - QMD 可执行；
 - QMD Collection 指向目标 Vault；
 - Skill 必需文件完整；

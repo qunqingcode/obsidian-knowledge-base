@@ -21,18 +21,33 @@
 |---|---|
 | 操作系统 | Windows 10/11 |
 | PowerShell | 5.1 或更高版本 |
-| Node.js | 22 或更高版本 |
+| Node.js | 18 或更高版本，推荐当前 LTS |
 | Obsidian | 建议 1.12.7 或更高版本 |
 | Agent | 支持 Agent Skills，例如 Codex |
 | 知识库 | 本地 Obsidian Vault |
 
 Obsidian CLI 用于获取实时链接图谱。若不安装或不启动 Obsidian，Skill 仍可使用文件解析后端。
 
-## 3. 安装 Node.js
+## 3. 推荐：一条命令安装
+
+在项目根目录运行：
+
+```powershell
+.\install.ps1 -VaultPath "D:\你的 Obsidian Vault"
+```
+
+默认自动选择已有 Agent Skills 目录、安装 QMD、生成配置并执行 `doctor`。
+使用其他 Agent 时可传 `-Agent codex|claude|cursor|agents`，未知 Agent
+使用 `-Agent custom -TargetPath <目录>`。离线或不需要 QMD 时使用
+`-SkipQmd`，系统会自动使用内置文件搜索。
+
+以下章节仅用于手动安装和排障。
+
+## 4. 安装 Node.js
 
 已安装 Node.js 的用户可以跳过本节。
 
-从 [Node.js 官网](https://nodejs.org/)安装 Node.js 22 或更高版本，然后重新打开 PowerShell。
+从 [Node.js 官网](https://nodejs.org/)安装 Node.js 18 或更高版本，然后重新打开 PowerShell。
 
 验证：
 
@@ -43,7 +58,7 @@ npm --version
 
 `node --version` 应显示 `v22.x.x` 或更高版本。
 
-## 4. 安装 QMD
+## 5. 安装 QMD
 
 在 PowerShell 中执行：
 
@@ -66,9 +81,9 @@ npm root -g
 
 参考：[QMD 官方仓库](https://github.com/tobi/qmd)。
 
-## 5. 安装 Skill
+## 6. 安装 Skill
 
-### 5.1 手动安装
+### 6.1 手动安装
 
 将完整的 `obsidian-knowledge-base` 目录复制到：
 
@@ -93,7 +108,7 @@ obsidian-knowledge-base/
     └── THIRD_PARTY_NOTICES.md
 ```
 
-### 5.2 从 Skills 生态安装
+### 6.2 从 Skills 生态安装
 
 项目发布到 GitHub 或 skills.sh 后，可使用：
 
@@ -105,7 +120,7 @@ npx skills add OWNER/REPO@obsidian-knowledge-base -g -y
 
 参考：[Skills CLI 文档](https://www.skills.sh/docs/cli)。
 
-## 6. 创建 QMD 索引
+## 7. 创建 QMD 索引
 
 将下面的 Vault 路径替换为自己的实际路径：
 
@@ -123,7 +138,7 @@ qmd collection list
 - Skill 每次搜索前会同步 Collection；
 - 当前搜索链路使用 BM25，不要求下载 Embedding 模型。
 
-## 7. 启用 Obsidian CLI
+## 8. 启用 Obsidian CLI
 
 如需读取 Obsidian 的实时链接缓存，请启用 Obsidian CLI：
 
@@ -149,7 +164,7 @@ obsidian vaults verbose format=json
 
 参考：[Obsidian CLI 官方文档](https://obsidian.md/help/cli)。
 
-## 8. 配置 Skill
+## 9. 配置 Skill
 
 打开：
 
@@ -161,10 +176,14 @@ C:\Users\<用户名>\.codex\skills\obsidian-knowledge-base\config.json
 
 ```json
 {
+  "config_version": 2,
   "vault_path": "C:\\path\\to\\your\\vault",
   "qmd_executable": "C:\\path\\to\\node.exe",
   "qmd_entry": "C:\\path\\to\\node_modules\\@tobilu\\qmd\\dist\\cli\\qmd.js",
   "qmd_collection": "obsidian",
+  "search": {
+    "backend": "auto"
+  },
   "behavior": {
     "mode": "auto",
     "log_retention_days": 30
@@ -200,7 +219,7 @@ C:\Users\<用户名>\.codex\skills\obsidian-knowledge-base\config.json
 
 `auto` 是推荐默认值：Agent 会自动判断什么时候查询私人知识，但不记录路由日志。也可改为仅明确调用时运行的 `on_demand`，或开启本地脱敏评估日志的 `audit`。
 
-### 8.1 查找 Node.js 路径
+### 9.1 查找 Node.js 路径
 
 ```powershell
 (Get-Command node).Source
@@ -208,7 +227,7 @@ C:\Users\<用户名>\.codex\skills\obsidian-knowledge-base\config.json
 
 将输出的绝对路径填入 `qmd_executable`。
 
-### 8.2 查找 QMD 入口
+### 9.2 查找 QMD 入口
 
 ```powershell
 npm root -g
@@ -222,7 +241,7 @@ npm root -g
 
 将完整路径填入 `qmd_entry`。
 
-### 8.3 确认 Vault 名称
+### 9.3 确认 Vault 名称
 
 ```powershell
 obsidian vaults verbose format=json
@@ -230,7 +249,7 @@ obsidian vaults verbose format=json
 
 将目标 Vault 的名称填入 `graph.obsidian_vault`。这通常是 Vault 根目录的文件夹名称。
 
-### 8.4 图谱后端
+### 9.4 图谱后端
 
 `graph.backend` 支持：
 
@@ -240,7 +259,7 @@ obsidian vaults verbose format=json
 | `obsidian` | 强制使用 Obsidian CLI，Obsidian 不可用时直接报错 |
 | `files` | 始终解析本地 Markdown，Obsidian 无需运行 |
 
-## 9. 验证安装
+## 10. 验证安装
 
 进入 Skill 目录：
 
@@ -248,15 +267,24 @@ obsidian vaults verbose format=json
 cd "$env:USERPROFILE\.codex\skills\obsidian-knowledge-base"
 ```
 
-### 9.1 验证全文搜索
+### 10.1 验证全文搜索
 
 ```powershell
 .\scripts\vault.ps1 -Mode search -Query "测试关键词" -MaxResults 10
 ```
 
+日常问答优先使用带图谱关联扩展的上下文检索：
+
+```powershell
+.\scripts\vault.ps1 -Mode context -Query "测试关键词" -MaxResults 5 -MaxRelated 10
+```
+
+`hits` 是全文检索结果，`related` 是从命中文档的一跳链接中发现的关联候选。
+关联候选必须读取后才能作为回答证据。
+
 如果 Vault 中存在相关内容，应返回笔记路径、标题和匹配片段。
 
-### 9.2 验证笔记读取
+### 10.2 验证笔记读取
 
 ```powershell
 .\scripts\vault.ps1 -Mode read -Note "文件夹\笔记名称.md"
@@ -264,7 +292,7 @@ cd "$env:USERPROFILE\.codex\skills\obsidian-knowledge-base"
 
 `-Note` 必须是 Vault 内的相对路径。
 
-### 9.3 验证图谱统计
+### 10.3 验证图谱统计
 
 ```powershell
 .\scripts\vault.ps1 -Mode stats
@@ -275,31 +303,31 @@ cd "$env:USERPROFILE\.codex\skills\obsidian-knowledge-base"
 - `obsidian`：使用 Obsidian 实时链接缓存；
 - `files`：使用本地文件解析。
 
-### 9.4 验证反向链接
+### 10.4 验证反向链接
 
 ```powershell
 .\scripts\vault.ps1 -Mode backlinks -Note "笔记名称.md"
 ```
 
-### 9.5 验证多跳邻居
+### 10.5 验证多跳邻居
 
 ```powershell
 .\scripts\vault.ps1 -Mode neighbors -Note "笔记名称.md" -Depth 2
 ```
 
-### 9.6 验证最短路径
+### 10.6 验证最短路径
 
 ```powershell
 .\scripts\vault.ps1 -Mode path -From "起点笔记.md" -To "终点笔记.md"
 ```
 
-### 9.7 验证知识库健康状态
+### 10.7 验证知识库健康状态
 
 ```powershell
 .\scripts\vault.ps1 -Mode health
 ```
 
-## 10. 在 Agent 中使用
+## 11. 在 Agent 中使用
 
 完成配置后，重新启动或新建一个 Codex 任务，使 Skill 被重新加载。
 
@@ -315,9 +343,9 @@ cd "$env:USERPROFILE\.codex\skills\obsidian-knowledge-base"
 
 Agent 会按问题自动选择全文搜索或图谱查询，并在形成结论前读取相关笔记。
 
-## 11. 常见问题
+## 12. 常见问题
 
-### 11.1 PowerShell 禁止运行脚本
+### 12.1 PowerShell 禁止运行脚本
 
 查看当前策略：
 
@@ -333,7 +361,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 然后重新执行验证命令。
 
-### 11.2 提示找不到 QMD
+### 12.2 提示找不到 QMD
 
 依次检查：
 
@@ -345,7 +373,7 @@ qmd --version
 
 确认 `config.json` 中的 `qmd_executable` 和 `qmd_entry` 都是存在的绝对路径。
 
-### 11.3 搜索没有结果
+### 12.3 搜索没有结果
 
 检查 Collection：
 
@@ -361,7 +389,7 @@ qmd update
 - Vault 内存在 `.md` 文件；
 - 搜索词确实出现在笔记中。
 
-### 11.4 图谱自动降级为 files
+### 12.4 图谱自动降级为 files
 
 检查：
 
@@ -379,7 +407,7 @@ obsidian vaults verbose format=json
 
 如果不需要实时缓存，使用 `files` 后端属于正常行为，不影响基本双链分析。
 
-### 11.5 找不到指定笔记
+### 12.5 找不到指定笔记
 
 先搜索得到准确的 Vault 相对路径：
 
@@ -389,7 +417,7 @@ obsidian vaults verbose format=json
 
 再把返回的 `.md` 路径传给 `backlinks`、`neighbors` 或 `path`。
 
-### 11.6 Obsidian 中有链接，但查询结果缺失
+### 12.6 Obsidian 中有链接，但查询结果缺失
 
 可能原因包括：
 
@@ -406,7 +434,7 @@ obsidian vaults verbose format=json
 .\scripts\vault.ps1 -Mode backlinks -Note "笔记名称.md" -Backend files
 ```
 
-## 12. 安全建议
+## 13. 安全建议
 
 - 不要把真实 `config.json` 提交到公开仓库；
 - 公开发布时提供 `config.example.json`；
@@ -416,7 +444,7 @@ obsidian vaults verbose format=json
 - Skill 默认只读，除非用户明确要求，否则不应修改笔记或新增链接；
 - Obsidian `eval` 具备访问应用内部对象的能力，只应运行项目提供的固定查询逻辑。
 
-## 13. 升级
+## 14. 升级
 
 升级 QMD：
 
@@ -434,7 +462,7 @@ qmd update
 
 不要用示例配置覆盖已经填写好的真实配置。
 
-## 14. 卸载
+## 15. 卸载
 
 删除 QMD Collection：
 
@@ -456,9 +484,9 @@ C:\Users\<用户名>\.codex\skills\obsidian-knowledge-base
 
 卸载 Skill 不会删除或修改 Obsidian Vault。
 
-## 15. 安装完成检查表
+## 16. 安装完成检查表
 
-- [ ] Node.js 版本不低于 22；
+- [ ] Node.js 版本不低于 18；
 - [ ] `qmd --version` 可运行；
 - [ ] QMD Collection 指向正确 Vault；
 - [ ] Skill 目录结构完整；

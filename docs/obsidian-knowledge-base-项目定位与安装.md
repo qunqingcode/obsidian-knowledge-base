@@ -167,12 +167,12 @@ flowchart TD
 
 - Windows 10/11；
 - PowerShell 5.1 或更高版本；
-- Node.js 22 或更高版本；
+- Node.js 18 或更高版本，推荐当前 LTS；
 - Obsidian 1.12.7 或更高版本，用于实时图谱后端；
 - 支持 Agent Skills 的 Agent，例如 Codex；
 - 一个本地 Obsidian Vault。
 
-QMD 当前包要求 Node.js `>=22.0.0`。QMD 的官方安装方式是：
+项目的一键安装器会检查 Node.js 并安装可选 QMD 后端。QMD 不可用时会自动使用内置文件搜索。手动安装 QMD 的方式是：
 
 ```powershell
 npm install -g @tobilu/qmd
@@ -181,6 +181,15 @@ npm install -g @tobilu/qmd
 参考：[QMD 官方仓库](https://github.com/tobi/qmd)。
 
 ### 5.2 安装 Skill
+
+推荐在仓库根目录直接运行：
+
+```powershell
+.\install.ps1 -VaultPath "D:\你的 Obsidian Vault"
+```
+
+它会识别 Agent Skills 目录、生成配置并运行 `doctor`。未知 Agent 可使用
+`-Agent custom -TargetPath <目录>`。
 
 #### 尚未发布到 Skills 生态时
 
@@ -310,10 +319,10 @@ npm root -g
 cd "$env:USERPROFILE\.codex\skills\obsidian-knowledge-base"
 ```
 
-测试全文检索：
+测试全文检索和一跳关联扩展：
 
 ```powershell
-.\scripts\vault.ps1 -Mode search -Query "部署" -MaxResults 5
+.\scripts\vault.ps1 -Mode context -Query "部署" -MaxResults 5 -MaxRelated 10
 ```
 
 测试图谱：
@@ -368,8 +377,8 @@ cd "$env:USERPROFILE\.codex\skills\obsidian-knowledge-base"
 ### 命令行
 
 ```powershell
-# 搜索
-.\scripts\vault.ps1 -Mode search -Query "关键词"
+# 搜索并发现直接关联知识
+.\scripts\vault.ps1 -Mode context -Query "关键词" -MaxRelated 10
 
 # 读取
 .\scripts\vault.ps1 -Mode read -Note "folder\note.md"

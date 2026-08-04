@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet(
-        "search", "list", "read", "read-json",
+        "search", "context", "list", "read", "read-json",
         "links", "backlinks", "neighbors", "path", "cluster", "bridges",
         "hubs", "orphans", "relations", "stats", "unresolved",
         "suggest-links", "health", "report"
@@ -38,6 +38,9 @@ param(
     [ValidateRange(1, 100)]
     [int]$MaxSuggestions = 30,
 
+    [ValidateRange(0, 50)]
+    [int]$MaxRelated = 10,
+
     [ValidateSet("auto", "obsidian", "files")]
     [string]$Backend = "auto"
 )
@@ -61,26 +64,30 @@ if (-not (Test-Path -LiteralPath $vault -PathType Container)) {
 }
 
 $qmdExecutable = [string]$config.qmd_executable
-if ([string]::IsNullOrWhiteSpace($qmdExecutable)) {
-    throw "config.json must contain a non-empty qmd_executable."
-}
-$qmdExecutable = [System.IO.Path]::GetFullPath($qmdExecutable)
-if (-not (Test-Path -LiteralPath $qmdExecutable -PathType Leaf)) {
-    throw "Configured QMD executable does not exist: $qmdExecutable"
-}
-
 $qmdEntry = [string]$config.qmd_entry
-if ([string]::IsNullOrWhiteSpace($qmdEntry)) {
-    throw "config.json must contain a non-empty qmd_entry."
-}
-$qmdEntry = [System.IO.Path]::GetFullPath($qmdEntry)
-if (-not (Test-Path -LiteralPath $qmdEntry -PathType Leaf)) {
-    throw "Configured QMD entry point does not exist: $qmdEntry"
-}
-
 $qmdCollection = [string]$config.qmd_collection
-if ([string]::IsNullOrWhiteSpace($qmdCollection)) {
-    throw "config.json must contain a non-empty qmd_collection."
+$qmdReady = $false
+if (
+    -not [string]::IsNullOrWhiteSpace($qmdExecutable) -and
+    -not [string]::IsNullOrWhiteSpace($qmdEntry) -and
+    -not [string]::IsNullOrWhiteSpace($qmdCollection)
+) {
+    $qmdExecutable = [System.IO.Path]::GetFullPath($qmdExecutable)
+    $qmdEntry = [System.IO.Path]::GetFullPath($qmdEntry)
+    $qmdReady = (
+        (Test-Path -LiteralPath $qmdExecutable -PathType Leaf) -and
+        (Test-Path -LiteralPath $qmdEntry -PathType Leaf)
+    )
+}
+$searchBackend = [string]$config.search.backend
+if ([string]::IsNullOrWhiteSpace($searchBackend)) {
+    $searchBackend = "auto"
+}
+if ($searchBackend -notin @("auto", "qmd", "files")) {
+    throw "config.json search.backend must be one of: auto, qmd, files."
+}
+if ($searchBackend -eq "qmd" -and -not $qmdReady) {
+    throw "QMD search was required by config.json but its executable, entry point, or collection is unavailable."
 }
 
 $vaultPrefix = $vault.TrimEnd(
@@ -293,72 +300,69 @@ if ($Mode -eq "read-json") {
 }
 
 if ([string]::IsNullOrWhiteSpace($Query)) {
-    throw "-Query is required when -Mode search is used."
+    throw "-Query is required when -Mode search or context is used."
 }
 
-# Synchronize only when the vault fingerprint changed. Re-running QMD update for
-# an unchanged vault dominates query latency and makes the 3-second target
-# unattainable. Count, newest write time, and total bytes also detect deletions
-# and most content updates without storing note contents.
-$syncStateRoot = Join-Path $skillRoot ".qmd"
-$syncStatePath = Join-Path $syncStateRoot "vault-sync-state.json"
 $vaultNotes = @(Get-VaultNotes)
-$newestWriteTicks = 0L
-$totalBytes = 0L
-foreach ($vaultNote in $vaultNotes) {
-    $totalBytes += [long]$vaultNote.Length
-    if ($vaultNote.LastWriteTimeUtc.Ticks -gt $newestWriteTicks) {
-        $newestWriteTicks = $vaultNote.LastWriteTimeUtc.Ticks
-    }
-}
-$vaultFingerprint = [ordered]@{
-    note_count = $vaultNotes.Count
-    newest_write_ticks = $newestWriteTicks
-    total_bytes = $totalBytes
-}
-
-$needsSync = $true
-if (Test-Path -LiteralPath $syncStatePath -PathType Leaf) {
+$qmdResults = @()
+$useQmd = $qmdReady -and $searchBackend -ne "files"
+if ($useQmd) {
+    # Synchronize only when the vault fingerprint changed. QMD remains the
+    # preferred backend, while auto mode can fall back to local file search.
     try {
-        $syncState = Get-Content -LiteralPath $syncStatePath -Raw -Encoding UTF8 |
-            ConvertFrom-Json
-        $needsSync = (
-            [int]$syncState.note_count -ne $vaultFingerprint.note_count -or
-            [long]$syncState.newest_write_ticks -ne $vaultFingerprint.newest_write_ticks -or
-            [long]$syncState.total_bytes -ne $vaultFingerprint.total_bytes
-        )
+        $syncStateRoot = Join-Path $skillRoot ".qmd"
+        $syncStatePath = Join-Path $syncStateRoot "vault-sync-state.json"
+        $newestWriteTicks = 0L
+        $totalBytes = 0L
+        foreach ($vaultNote in $vaultNotes) {
+            $totalBytes += [long]$vaultNote.Length
+            if ($vaultNote.LastWriteTimeUtc.Ticks -gt $newestWriteTicks) {
+                $newestWriteTicks = $vaultNote.LastWriteTimeUtc.Ticks
+            }
+        }
+        $vaultFingerprint = [ordered]@{
+            note_count = $vaultNotes.Count
+            newest_write_ticks = $newestWriteTicks
+            total_bytes = $totalBytes
+        }
+        $needsSync = $true
+        if (Test-Path -LiteralPath $syncStatePath -PathType Leaf) {
+            try {
+                $syncState = Get-Content -LiteralPath $syncStatePath -Raw -Encoding UTF8 |
+                    ConvertFrom-Json
+                $needsSync = (
+                    [int]$syncState.note_count -ne $vaultFingerprint.note_count -or
+                    [long]$syncState.newest_write_ticks -ne $vaultFingerprint.newest_write_ticks -or
+                    [long]$syncState.total_bytes -ne $vaultFingerprint.total_bytes
+                )
+            }
+            catch {
+                $needsSync = $true
+            }
+        }
+        if ($needsSync) {
+            & $qmdExecutable $qmdEntry update *> $null
+            if ($LASTEXITCODE -ne 0) { throw "QMD update failed." }
+            New-Item -ItemType Directory -Path $syncStateRoot -Force | Out-Null
+            $vaultFingerprint | ConvertTo-Json |
+                Set-Content -LiteralPath $syncStatePath -Encoding UTF8
+        }
+
+        $candidateLimit = [Math]::Min(500, [Math]::Max($MaxResults * 3, 20))
+        $qmdJson = & $qmdExecutable $qmdEntry search $Query `
+            -c $qmdCollection -n $candidateLimit --format json --full-path --line-numbers
+        if ($LASTEXITCODE -ne 0) { throw "QMD search failed." }
+        if (-not [string]::IsNullOrWhiteSpace(($qmdJson -join "`n"))) {
+            $qmdResults = ($qmdJson -join "`n") | ConvertFrom-Json
+        }
     }
     catch {
-        $needsSync = $true
+        if ($searchBackend -eq "qmd") {
+            throw "QMD search failed for collection '$qmdCollection': $($_.Exception.Message)"
+        }
+        $useQmd = $false
+        $qmdResults = @()
     }
-}
-
-if ($needsSync) {
-    # QMD prints update progress to stderr, so suppress both streams here.
-    & $qmdExecutable $qmdEntry update *> $null
-    if ($LASTEXITCODE -ne 0) {
-        throw "QMD failed to update collection '$qmdCollection'."
-    }
-
-    New-Item -ItemType Directory -Path $syncStateRoot -Force | Out-Null
-    $vaultFingerprint | ConvertTo-Json |
-        Set-Content -LiteralPath $syncStatePath -Encoding UTF8
-}
-
-$candidateLimit = [Math]::Min(500, [Math]::Max($MaxResults * 3, 20))
-$qmdJson = & $qmdExecutable $qmdEntry search $Query `
-    -c $qmdCollection `
-    -n $candidateLimit `
-    --format json `
-    --full-path `
-    --line-numbers
-if ($LASTEXITCODE -ne 0) {
-    throw "QMD search failed for collection '$qmdCollection'."
-}
-
-$qmdResults = @()
-if (-not [string]::IsNullOrWhiteSpace(($qmdJson -join "`n"))) {
-    $qmdResults = ($qmdJson -join "`n") | ConvertFrom-Json
 }
 
 $results = [System.Collections.Generic.List[object]]::new()
@@ -403,6 +407,71 @@ foreach ($result in $qmdResults) {
         score = [double]$result.score
         sensitive = $isSensitive
     })
+}
+
+# Built-in offline fallback. It intentionally favors predictable literal
+# matching over an opaque ranking model so every shell-capable Agent retains a
+# useful knowledge layer even when QMD is unavailable.
+if (-not $useQmd) {
+    $queryTerms = @(Get-QueryTerms $Query)
+    $fileMatches = @(
+        foreach ($vaultNote in $vaultNotes) {
+            [string]$content = Get-Content -LiteralPath $vaultNote.FullName -Raw -Encoding UTF8
+            $relative = Get-RelativeNotePath $vaultNote.FullName
+            $matchedTerms = @()
+            $occurrences = 0
+            $firstIndex = -1
+            foreach ($term in $queryTerms) {
+                $matches = [regex]::Matches(
+                    $content,
+                    [regex]::Escape($term),
+                    [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
+                )
+                $pathMatched = $relative.IndexOf(
+                    $term,
+                    [System.StringComparison]::OrdinalIgnoreCase
+                ) -ge 0
+                if ($matches.Count -gt 0 -or $pathMatched) {
+                    $matchedTerms += $term
+                    $occurrences += $matches.Count
+                    if ($matches.Count -gt 0 -and ($firstIndex -lt 0 -or $matches[0].Index -lt $firstIndex)) {
+                        $firstIndex = $matches[0].Index
+                    }
+                }
+            }
+            if ($matchedTerms.Count -eq 0) { continue }
+
+            $start = if ($firstIndex -lt 0) { 0 } else { [Math]::Max(0, $firstIndex - 120) }
+            $length = [Math]::Min(320, [Math]::Max(0, $content.Length - $start))
+            $preview = if ($length -gt 0) { $content.Substring($start, $length) } else { "" }
+            $isSensitive = Test-SensitiveNote `
+                -FullName $vaultNote.FullName -RelativePath $relative -Preview $content
+            [pscustomobject]@{
+                file = $vaultNote
+                relative = $relative
+                preview = if ($isSensitive) { "[redacted: potentially sensitive match]" } else { $preview }
+                sensitive = $isSensitive
+                matched_count = $matchedTerms.Count
+                score = [double]($matchedTerms.Count * 10 + [Math]::Min($occurrences, 20))
+            }
+        }
+    ) | Sort-Object `
+        @{ Expression = "score"; Descending = $true }, `
+        @{ Expression = "relative"; Descending = $false }
+
+    foreach ($fileMatch in $fileMatches | Select-Object -First $MaxResults) {
+        [void]$seenPaths.Add([string]$fileMatch.relative)
+        $results.Add([pscustomobject]@{
+            path = $fileMatch.relative
+            title = $fileMatch.file.BaseName
+            modified = $fileMatch.file.LastWriteTime.ToString("o")
+            line = $null
+            preview = $fileMatch.preview
+            match = "local_text"
+            score = $fileMatch.score
+            sensitive = $fileMatch.sensitive
+        })
+    }
 }
 
 # QMD BM25 treats verbose multi-keyword queries narrowly, which is especially
@@ -474,4 +543,46 @@ if ($results.Count -lt $MaxResults) {
     }
 }
 
-ConvertTo-Json -InputObject @($results) -Depth 4
+if ($Mode -eq "context") {
+    $related = [System.Collections.Generic.List[object]]::new()
+    $relatedSeen = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase
+    )
+    foreach ($hit in @($results | Select-Object -First 3)) {
+        if ($hit.sensitive) { continue }
+        try {
+            $graphJson = & (Join-Path $PSScriptRoot "graph.ps1") `
+                -Mode neighbors -Note $hit.path -Depth 1 -Backend $Backend
+            $graphResult = ($graphJson -join "`n") | ConvertFrom-Json
+            foreach ($edge in @($graphResult.hop1Edges)) {
+                $relatedPath = [string]$edge.to
+                if ($relatedPath -eq $hit.path) { $relatedPath = [string]$edge.from }
+                if (
+                    $seenPaths.Contains($relatedPath) -or
+                    -not $relatedSeen.Add($relatedPath)
+                ) { continue }
+                $related.Add([pscustomobject]@{
+                    path = $relatedPath
+                    related_to = $hit.path
+                    direction = $edge.direction
+                    reasons = @($edge.reasons)
+                })
+                if ($related.Count -ge $MaxRelated) { break }
+            }
+        }
+        catch {
+            # Search results remain useful if graph expansion is unavailable.
+        }
+        if ($related.Count -ge $MaxRelated) { break }
+    }
+    [ordered]@{
+        query = $Query
+        search_backend = if ($useQmd) { "qmd" } else { "files" }
+        hits = @($results)
+        related = @($related)
+        graph_expanded = $related.Count -gt 0
+    } | ConvertTo-Json -Depth 8
+}
+else {
+    ConvertTo-Json -InputObject @($results) -Depth 4
+}

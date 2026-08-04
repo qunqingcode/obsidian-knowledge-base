@@ -4,13 +4,38 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![skills.sh](https://skills.sh/b/qunqingcode/obsidian-knowledge-base)](https://skills.sh/qunqingcode/obsidian-knowledge-base/obsidian-knowledge-base)
 
-把本地 Obsidian Vault 一键接成 Codex、Claude Code 等 AI Agent 默认使用的私人知识库。
+把本地 Obsidian Vault 一键接成 Codex、Claude Code、Cursor 等 AI Agent 默认使用的私人知识库。
 
-Agent 会自动判断什么时候需要查询私人知识，完成本地全文检索、原文读取、双链图遍历和来源引用。Markdown 始终是唯一事实来源，Vault 不需要上传到云端。
+Agent 会遵循同一套工具无关的私人知识策略，自动判断什么时候需要查询，完成本地全文检索、原文读取、双链关联扩展和来源引用。Markdown 始终是唯一事实来源，Vault 不需要上传到云端。
 
 > Turn a local Obsidian vault into an agent-native private knowledge base with BM25 search, source citations, graph traversal, sensitive-content controls, and an offline fallback.
 
-## 一键集成
+## 一键安装
+
+下载或克隆本仓库后，只需一条命令：
+
+```powershell
+.\install.ps1 -VaultPath "D:\你的 Obsidian Vault"
+```
+
+安装器会自动识别本机现有的 Codex、Claude Code、Cursor 或通用
+`.agents/skills` 目录，部署 Skill、生成配置、安装可选 QMD 搜索后端，
+并运行 `doctor` 验收。指定 Agent 或安装目录时使用：
+
+```powershell
+.\install.ps1 -VaultPath "D:\Vault" -Agent claude
+.\install.ps1 -VaultPath "D:\Vault" -Agent custom -TargetPath "D:\agent\skills\obsidian-knowledge-base"
+```
+
+不希望安装 QMD 时加 `-SkipQmd`；全文搜索会自动使用内置文件后端，图谱也不依赖 Obsidian 正在运行。
+
+安装后诊断：
+
+```powershell
+.\scripts\doctor.ps1
+```
+
+## 让 Agent 代为安装
 
 将下面这段话完整发送给支持 Agent Skills 和本地命令执行的 Agent：
 
@@ -27,7 +52,7 @@ Agent 会自动完成：
 2. 检查 Node.js、QMD 和 Obsidian CLI；
 3. 安装 Skill 到当前用户的 Agent Skills 目录；
 4. 创建本机私有 `config.json`；
-5. 建立本地 BM25 索引；
+5. 建立本地 BM25 索引，失败时保留内置文件搜索；
 6. 验证搜索、引用和知识图谱能力。
 
 默认使用 `auto` 模式。安装完成后可直接问：
@@ -79,8 +104,11 @@ npx skills add https://github.com/qunqingcode/obsidian-knowledge-base `
 
 ## 核心能力
 
+- 工具无关的路由、隐私、证据和引用策略，可由不同 Agent 一致执行
 - QMD/BM25 本地全文搜索，不强制使用云端 Embedding API
+- QMD 不可用时自动使用内置全文搜索，不中断知识库访问
 - 搜索后读取原文，回答附带本地文件来源和修改日期
+- `context` 检索自动用一跳双链补充关联知识，图谱结果只作为候选线索
 - 出链、反向链接、N 跳邻居、最短路径和关系汇总
 - 连通分量、Hub、桥、孤岛、未解析链接和图谱健康分析
 - 优先读取 Obsidian 实时链接缓存，不可用时降级为 Markdown 文件解析
@@ -112,6 +140,9 @@ MCP 和 Obsidian CLI 主要解决“Agent 能调用哪些工具”。本项目�
 
 仓库包含一个不含真实信息的测试 Vault，覆盖：
 
+- 一键安装、自动配置和 `doctor` 验收
+- 无 QMD 时的内置全文搜索降级
+- `context` 搜索命中后的双链关联扩展
 - Markdown 双链解析和未解析链接
 - 最短路径、桥和孤岛统计
 - `on_demand`、`auto`、`audit` 配置
@@ -141,7 +172,7 @@ Windows 本地运行：
 
 - Windows 10/11
 - PowerShell 5.1+
-- Node.js 22+
+- Node.js 18+（推荐当前 LTS）
 - 支持 Agent Skills 的本地 Agent
 - Obsidian 1.12.7+ 可启用实时图谱；未启用时自动使用文件后端
 

@@ -2,6 +2,10 @@
 
 Use graph modes for questions about `[[wikilinks]]`, backlinks, note relationships, paths, hubs, clusters, or vault health.
 
+For ordinary knowledge questions, start with `vault.ps1 -Mode context`. It searches
+first and then expands one-hop links from the strongest hits. Use the specialized
+commands below when the user explicitly asks about structure or relationships.
+
 ## Command map
 
 | Mode | Required parameters | Purpose |

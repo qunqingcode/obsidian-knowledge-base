@@ -98,6 +98,54 @@ try {
     if ($logText -match "10\.20\.30\.40" -or $logText -match "do-not-store-this") {
         throw "Logger redaction leaked fixture credentials."
     }
+
+    $installTarget = Join-Path $tempRoot "installed-skill"
+    $installScript = Join-Path $repoRoot "install.ps1"
+    $install = & $installScript `
+        -VaultPath $fixtureVault `
+        -Agent custom `
+        -TargetPath $installTarget `
+        -SkipQmd | ConvertFrom-Json
+    Assert-Equal $install.installed $true "One-command installation failed"
+    Assert-Equal $install.search_backend "files" "Installer did not configure offline search"
+    Assert-Equal $install.graph_backend "files" "Installer did not verify the file graph"
+    if (-not (Test-Path -LiteralPath (Join-Path $installTarget "install.ps1") -PathType Leaf)) {
+        throw "Installed Skill cannot run the one-command installer for upgrades."
+    }
+
+    $installedVaultScript = Join-Path $installTarget "scripts\vault.ps1"
+    $context = & $installedVaultScript `
+        -Mode context `
+        -Query "Alpha" `
+        -MaxResults 3 `
+        -MaxRelated 5 `
+        -Backend files | ConvertFrom-Json
+    Assert-Equal $context.search_backend "files" "Context search did not use the offline fallback"
+    Assert-Equal $context.hits[0].path "Alpha.md" "Context search missed the expected note"
+    if (@($context.related.path) -notcontains "Beta.md") {
+        throw "Context search did not expand the frontmatter relationship."
+    }
+    if (@($context.related.path) -notcontains "Folder/Gamma.md") {
+        throw "Context search did not expand the body link relationship."
+    }
+
+    $doctor = & (Join-Path $installTarget "scripts\doctor.ps1") | ConvertFrom-Json
+    Assert-Equal $doctor.healthy $true "Doctor rejected a valid one-command installation"
+
+    $installedConfigPath = Join-Path $installTarget "config.json"
+    $installedConfig = Get-Content -LiteralPath $installedConfigPath -Raw -Encoding UTF8 |
+        ConvertFrom-Json
+    $installedConfig.behavior.mode = "audit"
+    $installedConfig | ConvertTo-Json -Depth 8 |
+        Set-Content -LiteralPath $installedConfigPath -Encoding UTF8
+    [void](& $installScript `
+        -VaultPath $fixtureVault `
+        -Agent custom `
+        -TargetPath $installTarget `
+        -SkipQmd | ConvertFrom-Json)
+    $upgradedConfig = Get-Content -LiteralPath $installedConfigPath -Raw -Encoding UTF8 |
+        ConvertFrom-Json
+    Assert-Equal $upgradedConfig.behavior.mode "audit" "Upgrade discarded the user's behavior mode"
 }
 finally {
     if (Test-Path -LiteralPath $tempRoot) {
