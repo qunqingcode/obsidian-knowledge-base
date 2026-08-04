@@ -1,5 +1,9 @@
 # Obsidian Knowledge Base
 
+<p align="center">
+  <img src="./docs/assets/social-preview.jpg" alt="Obsidian Knowledge Base — Local-first knowledge for AI agents" width="100%">
+</p>
+
 [![test](https://github.com/qunqingcode/obsidian-knowledge-base/actions/workflows/test.yml/badge.svg)](https://github.com/qunqingcode/obsidian-knowledge-base/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![skills.sh](https://skills.sh/b/qunqingcode/obsidian-knowledge-base)](https://skills.sh/qunqingcode/obsidian-knowledge-base/obsidian-knowledge-base)
@@ -9,6 +13,35 @@
 Agent 会遵循同一套工具无关的私人知识策略，自动判断什么时候需要查询，完成本地全文检索、原文读取、双链关联扩展和来源引用。Markdown 始终是唯一事实来源，Vault 不需要上传到云端。
 
 > Turn a local Obsidian vault into an agent-native private knowledge base with BM25 search, source citations, graph traversal, sensitive-content controls, and an offline fallback.
+
+**本地优先 · 默认只读 · 无需云端 Embedding · 回答可追溯**
+
+[一键安装](#一键安装) · [让 Agent 代为安装](#让-agent-代为安装) · [效果演示](#效果演示) · [安全边界](#安全边界) · [完整文档](#文档)
+
+## 效果演示
+
+安装后，不必每次提醒 Agent “去 Obsidian 查”。直接用自然语言提问：
+
+```text
+我们上次为什么调整那项设置？
+```
+
+Agent 会按需完成：
+
+```text
+判断问题可能依赖私人知识
+  → 在本地 Vault 检索相关 Markdown
+  → 读取原文并沿双链发现直接关联笔记
+  → 检查敏感信息、冲突和过期证据
+  → 返回答案，并附原始笔记路径与修改日期
+```
+
+它还可以回答关系型问题，例如：
+
+- “这篇笔记有哪些反向链接？”
+- “A 和 B 之间最短通过哪些笔记连接？”
+- “找出知识库里的核心节点和孤岛笔记。”
+- “生成一份 Vault 知识图谱健康报告。”
 
 ## 一键安装
 
