@@ -1,0 +1,74 @@
+name: Bug report
+description: 报告可复现的问题，帮助我们改进项目
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。提交前请先搜索已有 Issue，并移除日志中的 Vault 路径、账号、Token、IP 和笔记正文等私人信息。
+  - type: input
+    id: version
+    attributes:
+      label: 版本或提交
+      description: 例如 v0.1.0 或 commit SHA
+      placeholder: v0.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agent
+      options:
+        - Codex
+        - Claude Code
+        - Cursor
+        - Other Agent Skills client
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境
+      description: Windows、PowerShell、Node.js、Obsidian 版本，以及当前搜索/图谱后端
+      placeholder: |
+        Windows 11
+        PowerShell 7.5
+        Node.js 22
+        Obsidian 1.12.7
+        search backend: qmd
+        graph backend: files
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请提供最小、可重复的操作步骤
+      placeholder: |
+        1. 运行 ...
+        2. 输入 ...
+        3. 观察到 ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为与脱敏日志
+      description: 请务必删除私人路径、账号、凭证、IP 和笔记正文
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我已确认内容中不包含私人笔记、真实配置、凭证或其他敏感信息
+          required: true

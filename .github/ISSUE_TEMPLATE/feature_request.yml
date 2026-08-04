@@ -1,0 +1,45 @@
+name: Feature request
+description: 建议新的使用场景、Agent 支持或知识图谱能力
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决什么问题？
+      description: 请从实际使用场景出发，而不只是描述一个实现方案
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望方案
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 相关领域
+      options:
+        - 安装与配置
+        - 搜索与引用
+        - 双链与知识图谱
+        - 隐私与安全
+        - Agent 兼容性
+        - macOS / Linux 支持
+        - 文档与示例
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 已尝试的替代方案
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 参与意愿
+      options:
+        - label: 我愿意协助测试
+        - label: 我愿意尝试提交 Pull Request

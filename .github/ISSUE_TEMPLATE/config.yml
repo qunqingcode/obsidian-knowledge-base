@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 安装文档
+    url: https://github.com/qunqingcode/obsidian-knowledge-base/blob/main/docs/obsidian-knowledge-base-%E5%AE%89%E8%A3%85%E6%96%87%E6%A1%A3.md
+    about: 提交问题前先查看完整安装和诊断步骤
+  - name: 安全提醒
+    url: https://github.com/qunqingcode/obsidian-knowledge-base#%E5%AE%89%E5%85%A8%E8%BE%B9%E7%95%8C
+    about: Issue 中不要粘贴私人笔记、真实配置、凭证或服务器信息
