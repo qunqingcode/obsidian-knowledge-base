@@ -1,6 +1,10 @@
 # Obsidian Knowledge Base
 
 <p align="center">
+  <strong>简体中文</strong> · <a href="./README.en.md">English</a>
+</p>
+
+<p align="center">
   <img src="./docs/assets/social-preview.jpg" alt="Obsidian Knowledge Base — Local-first knowledge for AI agents" width="100%">
 </p>
 
@@ -11,8 +15,6 @@
 把本地 Obsidian Vault 一键接成 Codex、Claude Code、Cursor 等 AI Agent 默认使用的私人知识库。
 
 Agent 会遵循同一套工具无关的私人知识策略，自动判断什么时候需要查询，完成本地全文检索、原文读取、双链关联扩展和来源引用。Markdown 始终是唯一事实来源，Vault 不需要上传到云端。
-
-> Turn a local Obsidian vault into an agent-native private knowledge base with BM25 search, source citations, graph traversal, sensitive-content controls, and an offline fallback.
 
 **本地优先 · 默认只读 · 无需云端 Embedding · 回答可追溯**
 
@@ -194,7 +196,6 @@ Windows 本地运行：
 
 - [Agent 一键安装任务书](./docs/AGENT-一键安装-obsidian-knowledge-base.md)
 - [完整安装文档](./docs/obsidian-knowledge-base-安装文档.md)
-- [项目定位与安装说明](./docs/obsidian-knowledge-base-项目定位与安装.md)
 - [图查询参考](./docs/graph-queries.md)
 - [检索评估规范](./references/evaluation.md)
 - [贡献指南](./CONTRIBUTING.md)
