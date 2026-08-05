@@ -78,7 +78,7 @@ Send the following prompt to an agent that supports Agent Skills and local comma
 Read and strictly follow the installation runbook below. Connect my Obsidian vault as the agent's default private knowledge base.
 Continue through environment checks, dependency installation, skill deployment, configuration, and verification. Do not stop at instructions unless the vault path cannot be determined.
 
-https://github.com/qunqingcode/obsidian-knowledge-base/blob/main/docs/AGENT-一键安装-obsidian-knowledge-base.md
+https://github.com/qunqingcode/obsidian-knowledge-base/blob/main/docs/AGENT-INSTALL.md
 ```
 
 The runbook is currently written in Chinese, but its commands, variables, acceptance criteria, and safety boundaries are explicit and agent-readable.
@@ -194,7 +194,7 @@ Every push and pull request runs the test suite through GitHub Actions with Node
 
 ## Documentation
 
-- [Agent installation runbook (Chinese)](./docs/AGENT-一键安装-obsidian-knowledge-base.md)
+- [Agent installation runbook (Chinese)](./docs/AGENT-INSTALL.md)
 - [Complete installation guide (Chinese)](./docs/obsidian-knowledge-base-安装文档.md)
 - [Graph query reference (Chinese)](./docs/graph-queries.md)
 - [Retrieval evaluation specification](./references/evaluation.md)

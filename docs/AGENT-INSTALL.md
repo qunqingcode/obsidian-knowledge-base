@@ -19,7 +19,7 @@
 将本文档交给 Agent，然后发送：
 
 ```text
-请按照《AGENT-一键安装-obsidian-knowledge-base.md》完成安装。
+请按照《AGENT-INSTALL.md》完成安装。
 Obsidian Vault 路径：C:\path\to\your\vault
 Skill 源码位置：C:\path\to\obsidian-knowledge-base
 ```

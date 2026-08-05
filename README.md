@@ -78,7 +78,7 @@ Agent 会按需完成：
 请阅读并严格执行下面的安装任务书，把我的 Obsidian 一键接入为 Agent 默认私人知识库。
 持续完成环境检查、依赖安装、Skill 部署、配置生成和功能验收；除非无法确定 Vault 路径，否则不要只给操作建议。
 
-https://github.com/qunqingcode/obsidian-knowledge-base/blob/main/docs/AGENT-一键安装-obsidian-knowledge-base.md
+https://github.com/qunqingcode/obsidian-knowledge-base/blob/main/docs/AGENT-INSTALL.md
 ```
 
 Agent 会自动完成：
@@ -194,7 +194,7 @@ Windows 本地运行：
 
 ## 文档
 
-- [Agent 一键安装任务书](./docs/AGENT-一键安装-obsidian-knowledge-base.md)
+- [Agent 一键安装任务书](./docs/AGENT-INSTALL.md)
 - [完整安装文档](./docs/obsidian-knowledge-base-安装文档.md)
 - [图查询参考](./docs/graph-queries.md)
 - [检索评估规范](./references/evaluation.md)
